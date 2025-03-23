@@ -51,6 +51,13 @@ int main() {
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
+
+        // state-setting
+        gl::glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+        // state-using
+        gl::glClear(gl::GL_COLOR_BUFFER_BIT);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
