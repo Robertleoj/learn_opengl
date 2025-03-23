@@ -2,6 +2,8 @@
     "name": "opengllearn",
     "version-string": "0.1.0",
     "dependencies": [
-        "glbinding"
+        "spdlog",
+        "glbinding",
+        "glfw3"
     ]
 }
