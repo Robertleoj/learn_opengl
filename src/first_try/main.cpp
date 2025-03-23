@@ -17,6 +17,14 @@ void framebuffer_size_callback(
     gl::glViewport(0, 0, width, height);
 }
 
+void process_input(
+    GLFWwindow* window
+) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+}
+
 int main() {
     spdlog::set_level(spdlog::level::debug);
     glfwInit();
@@ -42,7 +50,11 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     while (!glfwWindowShouldClose(window)) {
+        process_input(window);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glfwTerminate();
+    return 0;
 }
