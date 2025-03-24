@@ -1,1 +1,2 @@
 add_subdirectory(first_try)
+add_subdirectory(hello_triangle)

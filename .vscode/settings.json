@@ -105,5 +105,6 @@
   },
   "python.analysis.inlayHints.callArgumentNames": "all",
   "python.analysis.typeCheckingMode": "standard",
-  "C_Cpp.intelliSenseCacheSize": 0
+  "C_Cpp.intelliSenseCacheSize": 0,
+  "clang-format.executable": "/usr/bin/clang-format-19"
 }
