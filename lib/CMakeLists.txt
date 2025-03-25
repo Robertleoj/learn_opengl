@@ -5,6 +5,9 @@ add_library(
     include/omgl/shaders.hpp
 
     include/omgl/io.hpp
+
+    src/omgl/glfw.cpp
+    include/omgl/glfw.hpp
 )
 
 target_link_libraries(
