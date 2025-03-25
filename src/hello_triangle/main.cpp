@@ -15,6 +15,45 @@ namespace fs = std::filesystem;
 
 const fs::path base = fs::path(__FILE__).parent_path();
 const fs::path vertex_shader_path = base / "shaders" / "vertex_shader.vert";
+const fs::path fragment_shader_path = base / "shaders" / "fragment_shader.frag";
+
+const std::size_t info_buffer_size = 512;
+
+void ensure_shader_compiled(
+    gl::GLuint shader_id
+) {
+    int success;
+    char info_log_buf[info_buffer_size];
+
+    gl::glGetShaderiv(shader_id, gl::GL_COMPILE_STATUS, &success);
+
+    if (!success) {
+        gl::glGetShaderInfoLog(
+            shader_id, info_buffer_size, nullptr, info_log_buf
+        );
+        throw std::runtime_error(std::format(
+            "Couldn't compile shader: {}", std::string(info_log_buf)
+        ));
+    }
+}
+
+void ensure_shader_program_linked(
+    gl::GLuint program_id
+) {
+    int success;
+    char info_log_buf[info_buffer_size];
+
+    gl::glGetProgramiv(program_id, gl::GL_LINK_STATUS, &success);
+
+    if (!success) {
+        gl::glGetProgramInfoLog(
+            program_id, info_buffer_size, nullptr, info_log_buf
+        );
+        throw std::runtime_error(
+            std::format("Couldn't link program: {}", std::string(info_log_buf))
+        );
+    }
+}
 
 std::string read_file_text(
     fs::path path
@@ -62,22 +101,21 @@ GLFWwindow* get_window() {
         glfwTerminate();
         throw std::runtime_error("Failed to create window");
     }
+    spdlog::info("GLFW window created");
 
     return window;
 }
 
-unsigned int compile_vertex_shader(
+gl::GLuint compile_vertex_shader(
     fs::path shader_path
 ) {
     // now we create the vertex shader
-    unsigned int vertex_shader;
+    gl::GLuint vertex_shader;
     vertex_shader = gl::glCreateShader(gl::GL_VERTEX_SHADER);
 
     // read the shader source
     auto vertex_shader_source = read_file_text(vertex_shader_path);
     const char* vertex_shader_source_cstr = vertex_shader_source.c_str();
-
-    spdlog::info(std::format("Shader source: {}", vertex_shader_source));
 
     // set the shader's source
     gl::glShaderSource(
@@ -93,20 +131,34 @@ unsigned int compile_vertex_shader(
     );
     gl::glCompileShader(vertex_shader);
 
-    int success;
-    char info_log_buf[512];
+    ensure_shader_compiled(vertex_shader);
 
-    gl::glGetShaderiv(vertex_shader, gl::GL_COMPILE_STATUS, &success);
-
-    if (!success) {
-        gl::glGetShaderInfoLog(vertex_shader, 512, nullptr, info_log_buf);
-        std::string info_log(info_log_buf);
-        throw std::runtime_error(
-            std::format("Couldn't compile shader: {}", info_log_buf)
-        );
-    }
+    spdlog::info(
+        "Vertex shader compiled: id={}, source={}",
+        vertex_shader,
+        shader_path.string()
+    );
 
     return vertex_shader;
+}
+
+gl::GLuint compile_fragment_shader(
+    fs::path path
+) {
+    gl::GLuint shader_id = gl::glCreateShader(gl::GL_FRAGMENT_SHADER);
+
+    auto fragment_shader_source = read_file_text(path);
+    const char* fragment_shader_source_cstr = fragment_shader_source.c_str();
+
+    gl::glShaderSource(shader_id, 1, &fragment_shader_source_cstr, nullptr);
+    gl::glCompileShader(shader_id);
+
+    ensure_shader_compiled(shader_id);
+    spdlog::info(
+        "Fragment shader compiled: id={} source={}", shader_id, path.string()
+    );
+
+    return shader_id;
 }
 
 int main() {
@@ -137,7 +189,7 @@ int main() {
 
     // create a vertex buffer object
     // state-setting
-    unsigned int vbo;
+    gl::GLuint vbo;
     // this is just a buffer object - we are creating/declaring a buffer
     gl::glGenBuffers(1, &vbo);
 
@@ -176,16 +228,72 @@ int main() {
         gl::GL_STATIC_DRAW
     );
 
-    auto vertex_shader = compile_vertex_shader(vertex_shader_path);
+    auto vertex_shader_id = compile_vertex_shader(vertex_shader_path);
+    auto fragment_shader_id = compile_fragment_shader(fragment_shader_path);
+
+    gl::GLuint shader_program_id = gl::glCreateProgram();
+    gl::glAttachShader(shader_program_id, vertex_shader_id);
+    gl::glAttachShader(shader_program_id, fragment_shader_id);
+    gl::glLinkProgram(shader_program_id);
+
+    ensure_shader_program_linked(shader_program_id);
+
+    gl::glDeleteShader(vertex_shader_id);
+    gl::glDeleteShader(fragment_shader_id);
+
+    // Before we start setting states to draw our object, we need
+    // to create a Vertex Array Object that stores the object state.
+    gl::GLuint vertex_array_obj_id;
+
+    // we can create many at a time, but we just create one this time.
+    gl::glGenVertexArrays(1, &vertex_array_obj_id);
+
+    // We enable the vertex array object before we start fiddling with state
+    gl::glBindVertexArray(vertex_array_obj_id);
+
+    // now we specify how our vertices are laid out in memory
+    // and which variables they should be linked to in our shaders
+    // Since vbo is still bound to GL_ARRAY_BUFFER, opengl will attach
+    // vbo to attribute 0.
+    glVertexAttribPointer(
+        // This is for attribute 0 (location=0 in our vertex shader)
+        0,
+        // This is the size of the vertex attribute - it is a vec3, so
+        // it is composed of 3 values
+        3,
+        // The type is floating point (float*)
+        gl::GL_FLOAT,
+        // This argument specifies whether we want to squish our inputs
+        // to a normalized range, usually not needed for floats
+        gl::GL_FALSE,
+        // This is the stride of the data - what is the distance between
+        // pointers to the first values of the vectors
+        // We can also pass 0, which tells OpenGL that we have tightly
+        // packed values
+        3 * sizeof(float),
+        // This is a weird argument - it represents the offset to the first
+        // value given the pointer to the beginning of the vectors. Our values
+        // have 0 offset, so we specify 0 (so what is the void* cast for?)
+        static_cast<void*>(0)
+    );
+    // vertex attributes are disabled by default, so we tell OpenGL to
+    // enable the vertex attribute at location=0
+    gl::glEnableVertexAttribArray(0);
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
 
-        // state-setting
+        // state-setting - it sets the color used to clear the screen
         gl::glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-        // state-using
+        // state-using - clears the state setting the color
+        // to the color set above
         gl::glClear(gl::GL_COLOR_BUFFER_BIT);
+
+        //
+        gl::glUseProgram(shader_program_id);
+        gl::glBindVertexArray(vertex_array_obj_id);
+        gl::glDrawArrays(gl::GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
