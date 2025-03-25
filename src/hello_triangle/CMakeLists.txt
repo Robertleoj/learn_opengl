@@ -11,5 +11,7 @@ target_link_libraries(
     glfw
 
     spdlog::spdlog
+
+    omgl
 )
 

@@ -10,66 +10,13 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <omgl/shaders.hpp>
 
 namespace fs = std::filesystem;
 
 const fs::path base = fs::path(__FILE__).parent_path();
 const fs::path vertex_shader_path = base / "shaders" / "vertex_shader.vert";
 const fs::path fragment_shader_path = base / "shaders" / "fragment_shader.frag";
-
-const std::size_t info_buffer_size = 512;
-
-void ensure_shader_compiled(
-    gl::GLuint shader_id
-) {
-    int success;
-    char info_log_buf[info_buffer_size];
-
-    gl::glGetShaderiv(shader_id, gl::GL_COMPILE_STATUS, &success);
-
-    if (!success) {
-        gl::glGetShaderInfoLog(
-            shader_id, info_buffer_size, nullptr, info_log_buf
-        );
-        throw std::runtime_error(std::format(
-            "Couldn't compile shader: {}", std::string(info_log_buf)
-        ));
-    }
-}
-
-void ensure_shader_program_linked(
-    gl::GLuint program_id
-) {
-    int success;
-    char info_log_buf[info_buffer_size];
-
-    gl::glGetProgramiv(program_id, gl::GL_LINK_STATUS, &success);
-
-    if (!success) {
-        gl::glGetProgramInfoLog(
-            program_id, info_buffer_size, nullptr, info_log_buf
-        );
-        throw std::runtime_error(
-            std::format("Couldn't link program: {}", std::string(info_log_buf))
-        );
-    }
-}
-
-std::string read_file_text(
-    fs::path path
-) {
-    std::ifstream file(path);
-
-    if (!file) {
-        throw std::runtime_error(std::format("Couldn't open {}", path.string())
-        );
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-
-    return buffer.str();
-}
 
 void framebuffer_size_callback(
     GLFWwindow* window,
@@ -104,61 +51,6 @@ GLFWwindow* get_window() {
     spdlog::info("GLFW window created");
 
     return window;
-}
-
-gl::GLuint compile_vertex_shader(
-    fs::path shader_path
-) {
-    // now we create the vertex shader
-    gl::GLuint vertex_shader;
-    vertex_shader = gl::glCreateShader(gl::GL_VERTEX_SHADER);
-
-    // read the shader source
-    auto vertex_shader_source = read_file_text(vertex_shader_path);
-    const char* vertex_shader_source_cstr = vertex_shader_source.c_str();
-
-    // set the shader's source
-    gl::glShaderSource(
-        // the shader whose source we are specifying
-        vertex_shader,
-        // the number of source files we are providing
-        1,
-        // the actual pointer to the source
-        // probably a pointer pointer because we might specify multiple files
-        &vertex_shader_source_cstr,
-        // we don't need to specify the length, as they are null-terminated
-        nullptr
-    );
-    gl::glCompileShader(vertex_shader);
-
-    ensure_shader_compiled(vertex_shader);
-
-    spdlog::info(
-        "Vertex shader compiled: id={}, source={}",
-        vertex_shader,
-        shader_path.string()
-    );
-
-    return vertex_shader;
-}
-
-gl::GLuint compile_fragment_shader(
-    fs::path path
-) {
-    gl::GLuint shader_id = gl::glCreateShader(gl::GL_FRAGMENT_SHADER);
-
-    auto fragment_shader_source = read_file_text(path);
-    const char* fragment_shader_source_cstr = fragment_shader_source.c_str();
-
-    gl::glShaderSource(shader_id, 1, &fragment_shader_source_cstr, nullptr);
-    gl::glCompileShader(shader_id);
-
-    ensure_shader_compiled(shader_id);
-    spdlog::info(
-        "Fragment shader compiled: id={} source={}", shader_id, path.string()
-    );
-
-    return shader_id;
 }
 
 int main() {
@@ -228,15 +120,16 @@ int main() {
         gl::GL_STATIC_DRAW
     );
 
-    auto vertex_shader_id = compile_vertex_shader(vertex_shader_path);
-    auto fragment_shader_id = compile_fragment_shader(fragment_shader_path);
+    auto vertex_shader_id = omgl::compile_vertex_shader(vertex_shader_path);
+    auto fragment_shader_id =
+        omgl::compile_fragment_shader(fragment_shader_path);
 
     gl::GLuint shader_program_id = gl::glCreateProgram();
     gl::glAttachShader(shader_program_id, vertex_shader_id);
     gl::glAttachShader(shader_program_id, fragment_shader_id);
     gl::glLinkProgram(shader_program_id);
 
-    ensure_shader_program_linked(shader_program_id);
+    omgl::ensure_shader_program_linked(shader_program_id);
 
     gl::glDeleteShader(vertex_shader_id);
     gl::glDeleteShader(fragment_shader_id);
