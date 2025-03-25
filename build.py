@@ -2,7 +2,6 @@
 
 """A script to build the C++ backend and install the bindings into the source tree."""
 
-import os
 import shutil
 import subprocess
 from functools import partial
