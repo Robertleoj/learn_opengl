@@ -1,5 +1,5 @@
 add_library(
-    omgl SHARED
+    omgl STATIC
 
     src/omgl/shaders.cpp
     include/omgl/shaders.hpp

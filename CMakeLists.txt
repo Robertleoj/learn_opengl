@@ -7,16 +7,12 @@ set(CMAKE_C_COMPILER /usr/bin/gcc-13)
 set(CMAKE_CXX_COMPILER /usr/bin/g++-13)
 set(CMAKE_LINKER /usr/bin/ldd)
 
-set(VCPKG_TARGET_ARCHITECTURE x64)
-set(VCPKG_CRT_LINKAGE dynamic)
-set(VCPKG_LIBRARY_LINKAGE dynamic)
-
 project(project)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-linux-dynamic")
+set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-linux")
 
 set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")
 
