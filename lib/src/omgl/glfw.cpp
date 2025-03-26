@@ -1,3 +1,5 @@
+#include <glbinding/gl/gl.h>
+#include <glbinding/glbinding.h>
 #include <spdlog/spdlog.h>
 #include <omgl/glfw.hpp>
 #include <stdexcept>
@@ -22,6 +24,12 @@ GLFWwindow* make_window(
         throw std::runtime_error("Failed to create window");
     }
     spdlog::info("GLFW window created");
+
+    glfwMakeContextCurrent(window);
+
+    glbinding::initialize(glfwGetProcAddress);
+
+    gl::glViewport(0, 0, width, height);
 
     return window;
 }
