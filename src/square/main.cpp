@@ -6,6 +6,7 @@
 #include <glbinding/gl/gl.h>
 #include <glbinding/glbinding.h>
 #include <spdlog/spdlog.h>
+
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -17,7 +18,8 @@ namespace fs = std::filesystem;
 
 const fs::path base = fs::path(__FILE__).parent_path();
 const fs::path vertex_shader_path = base / "shaders" / "vertex_shader.vert";
-const fs::path fragment_shader_path = base / "shaders" / "fragment_shader.frag";
+const fs::path orange_frag_path = base / "shaders" / "just_orange.frag";
+const fs::path blue_frag_path = base / "shaders" / "just_blue.frag";
 
 void framebuffer_size_callback(
     GLFWwindow* window,
@@ -36,139 +38,242 @@ void process_input(
     }
 }
 
+gl::GLuint set_array_buffer(
+    const std::vector<float>& data
+) {
+    gl::GLuint vertex_buffer_id;
+    gl::glGenBuffers(1, &vertex_buffer_id);
+
+    spdlog::info("vbo id: {}", vertex_buffer_id);
+
+    gl::glBindBuffer(gl::GL_ARRAY_BUFFER, vertex_buffer_id);
+
+    gl::glBufferData(
+        gl::GL_ARRAY_BUFFER,
+        data.size() * sizeof(float),
+        data.data(),
+        gl::GL_STATIC_DRAW
+    );
+
+    return vertex_buffer_id;
+}
+
+gl::GLuint set_element_buffer(
+    const std::vector<gl::GLuint>& indices
+) {
+    gl::GLuint element_array_buffer_id;
+    gl::glGenBuffers(1, &element_array_buffer_id);
+
+    gl::glBindBuffer(gl::GL_ELEMENT_ARRAY_BUFFER, element_array_buffer_id);
+    gl::glBufferData(
+        gl::GL_ELEMENT_ARRAY_BUFFER,
+        indices.size() * sizeof(gl::GLuint),
+        indices.data(),
+        gl::GL_STATIC_DRAW
+    );
+
+    return element_array_buffer_id;
+}
+
+gl::GLuint make_shader_program(
+    fs::path vertex_shader_path,
+    fs::path fragment_shader_path
+) {
+    auto vertex_shader_id = omgl::compile_vertex_shader(vertex_shader_path);
+    auto fragment_shader_id =
+        omgl::compile_fragment_shader(fragment_shader_path);
+
+    auto shader_program_id =
+        omgl::make_shader_program(vertex_shader_id, fragment_shader_id);
+
+    gl::glDeleteShader(vertex_shader_id);
+    gl::glDeleteShader(fragment_shader_id);
+
+    return shader_program_id;
+}
+
+class Square {
+   public:
+    Square(
+        std::vector<float> vertices
+    )
+        : vertices(vertices) {
+        this->indices = {
+
+            // top right triangle
+            0,
+            1,
+            2,
+            // bottom left triangle
+            0,
+            2,
+            3
+        };
+    }
+
+    void init() {
+        gl::glGenVertexArrays(1, &this->vao_id);
+
+        gl::glBindVertexArray(this->vao_id);
+
+        auto vertex_buffer_id = set_array_buffer(this->vertices);
+        auto element_buffer_id = set_element_buffer(this->indices);
+
+        gl::glVertexAttribPointer(
+            0,
+            3,
+            gl::GL_FLOAT,
+            gl::GL_FALSE,
+            3 * sizeof(float),
+            static_cast<void*>(0)
+        );
+        gl::glEnableVertexAttribArray(0);
+
+        gl::glBindVertexArray(0);
+    }
+
+    void draw() {
+        gl::glBindVertexArray(this->vao_id);
+        gl::glDrawElements(gl::GL_TRIANGLES, 6, gl::GL_UNSIGNED_INT, 0);
+        gl::glBindVertexArray(0);
+    }
+
+   private:
+    gl::GLuint vao_id;
+    std::vector<float> vertices;
+    std::vector<gl::GLuint> indices;
+};
+
+class Triangle {
+   public:
+    Triangle(
+        std::vector<float> vertices
+    )
+        : vertices(vertices) {}
+
+    void init() {
+        gl::glGenVertexArrays(1, &this->vao_id);
+
+        gl::glBindVertexArray(this->vao_id);
+
+        auto vertex_buffer_id = set_array_buffer(this->vertices);
+
+        gl::glVertexAttribPointer(
+            0,
+            3,
+            gl::GL_FLOAT,
+            gl::GL_FALSE,
+            3 * sizeof(float),
+            static_cast<void*>(0)
+        );
+        gl::glEnableVertexAttribArray(0);
+
+        gl::glBindVertexArray(0);
+    }
+
+    void draw() {
+        gl::glBindVertexArray(this->vao_id);
+        gl::glDrawArrays(gl::GL_TRIANGLES, 0, 3);
+        gl::glBindVertexArray(0);
+    }
+
+   private:
+    gl::GLuint vao_id;
+    std::vector<float> vertices;
+};
+
 int main() {
     spdlog::set_level(spdlog::level::debug);
 
-    const std::size_t window_width = 800;
-    const std::size_t window_height = 600;
+    const std::size_t window_width = 800, window_height = 600;
 
     auto window =
         omgl::make_window("Hello triangle", window_width, window_height);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    std::array<float, 3 * 3> arr = {
-        -0.5f,
-        -0.5f,
-        0.0f,
-        //
-        0.5f,
-        -0.5f,
-        0.0f,
-        //
-        0.0f,
-        0.5f,
-        0.0f
-    };
-
-    // create a vertex buffer object
-    // state-setting
-    gl::GLuint vbo;
-    // this is just a buffer object - we are creating/declaring a buffer
-    gl::glGenBuffers(1, &vbo);
-
-    spdlog::info("vbo id: {}", vbo);
-
-    // bind the buffer to the gl::GL_ARRAY_BUFFER target
-    // state-setting
-    // the GL_ARRAY_BUFFER is probably some slot that OpenGL has
-    // and we want to bind the buffer to it
-    gl::glBindBuffer(
-        // we are binding to the gl array buffer target
-        gl::GL_ARRAY_BUFFER,
-        // the object we are binding to the target
-        vbo
-    );
-
-    // copy the data into the buffer's memory
-    // state-setting
-
-    // we now have a buffer that is bound to a target
-    // but we don't have any data in the buffer
-
-    // question: why don't we copy into the bufer using the vbo variable?
-    // why do we specify the target instead of the vertex buffer object ID?
-    gl::glBufferData(
-        // copy to the buffer bound to this target
-        gl::GL_ARRAY_BUFFER,
-        // the number of bytes to copy
-        sizeof(arr),
-        // pointer to the data
-        arr.data(),
-        // This means we will only set the data once, and use it many times
-        // we could use GL_STREAM_DRAW if we were going to use the data only a
-        // few times or we could use GL_DYNAMIC_DRAW if we were going to change
-        // the data a lot
-        gl::GL_STATIC_DRAW
-    );
-
     auto vertex_shader_id = omgl::compile_vertex_shader(vertex_shader_path);
-    auto fragment_shader_id =
-        omgl::compile_fragment_shader(fragment_shader_path);
+    auto blue_frag_id = omgl::compile_fragment_shader(blue_frag_path);
+    auto orange_frag_id = omgl::compile_fragment_shader(orange_frag_path);
 
-    gl::GLuint shader_program_id = gl::glCreateProgram();
-    gl::glAttachShader(shader_program_id, vertex_shader_id);
-    gl::glAttachShader(shader_program_id, fragment_shader_id);
-    gl::glLinkProgram(shader_program_id);
+    auto orange_shader_program_id =
+        omgl::make_shader_program(vertex_shader_id, orange_frag_id);
 
-    omgl::ensure_shader_program_linked(shader_program_id);
+    auto blue_shader_program_id =
+        omgl::make_shader_program(vertex_shader_id, blue_frag_id);
 
-    gl::glDeleteShader(vertex_shader_id);
-    gl::glDeleteShader(fragment_shader_id);
+    Square square1({
 
-    // Before we start setting states to draw our object, we need
-    // to create a Vertex Array Object that stores the object state.
-    gl::GLuint vertex_array_obj_id;
+        // top left
+        -0.5f,
+        0.5f,
+        0.0f,
+        // top right
+        0.0f,
+        0.5f,
+        0.0f,
+        // bottom right
+        0.0f,
+        0.0f,
+        0.0f,
+        // bottom left
+        -0.5f,
+        0.0f,
+        0.0f
+    });
+    square1.init();
 
-    // we can create many at a time, but we just create one this time.
-    gl::glGenVertexArrays(1, &vertex_array_obj_id);
+    Square square2({
 
-    // We enable the vertex array object before we start fiddling with state
-    gl::glBindVertexArray(vertex_array_obj_id);
+        // top left
+        0.0f,
+        0.0f,
+        0.0f,
+        // top right
+        0.5f,
+        0.0f,
+        0.0f,
+        // bottom right
+        0.5f,
+        -0.5f,
+        0.0f,
+        // bottom left
+        0.0f,
+        -0.5f,
+        0.0f
+    });
+    square2.init();
 
-    // now we specify how our vertices are laid out in memory
-    // and which variables they should be linked to in our shaders
-    // Since vbo is still bound to GL_ARRAY_BUFFER, opengl will attach
-    // vbo to attribute 0.
-    glVertexAttribPointer(
-        // This is for attribute 0 (location=0 in our vertex shader)
-        0,
-        // This is the size of the vertex attribute - it is a vec3, so
-        // it is composed of 3 values
-        3,
-        // The type is floating point (float*)
-        gl::GL_FLOAT,
-        // This argument specifies whether we want to squish our inputs
-        // to a normalized range, usually not needed for floats
-        gl::GL_FALSE,
-        // This is the stride of the data - what is the distance between
-        // pointers to the first values of the vectors
-        // We can also pass 0, which tells OpenGL that we have tightly
-        // packed values
-        3 * sizeof(float),
-        // This is a weird argument - it represents the offset to the first
-        // value given the pointer to the beginning of the vectors. Our values
-        // have 0 offset, so we specify 0 (so what is the void* cast for?)
-        static_cast<void*>(0)
-    );
-    // vertex attributes are disabled by default, so we tell OpenGL to
-    // enable the vertex attribute at location=0
-    gl::glEnableVertexAttribArray(0);
+    Triangle triangle({
+
+        // v1
+        0.0f,
+        0.5f,
+        0.0f,
+        // v2
+        0.5f,
+        0.5f,
+        0.0f,
+        // v3
+        0.5f,
+        0.0f,
+        0.0f
+    });
+    triangle.init();
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
 
-        // state-setting - it sets the color used to clear the screen
         gl::glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
-        // state-using - clears the state setting the color
-        // to the color set above
         gl::glClear(gl::GL_COLOR_BUFFER_BIT);
 
-        //
-        gl::glUseProgram(shader_program_id);
-        gl::glBindVertexArray(vertex_array_obj_id);
-        gl::glDrawArrays(gl::GL_TRIANGLES, 0, 3);
+        gl::glUseProgram(blue_shader_program_id);
+
+        square1.draw();
+        square2.draw();
+
+        gl::glUseProgram(orange_shader_program_id);
+        triangle.draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -105,4 +105,18 @@ gl::GLuint compile_fragment_shader(
     return compile_fragment_shader(shader_source);
 }
 
+gl::GLuint make_shader_program(
+    gl::GLuint vertex_shader_id,
+    gl::GLuint fragment_shader_id
+) {
+    gl::GLuint shader_program_id = gl::glCreateProgram();
+    gl::glAttachShader(shader_program_id, vertex_shader_id);
+    gl::glAttachShader(shader_program_id, fragment_shader_id);
+    gl::glLinkProgram(shader_program_id);
+
+    omgl::ensure_shader_program_linked(shader_program_id);
+
+    return shader_program_id;
+}
+
 }  // namespace omgl

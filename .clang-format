@@ -1,6 +1,7 @@
 Language: Cpp
 BasedOnStyle: Chromium
 AlignAfterOpenBracket: BlockIndent
+
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
