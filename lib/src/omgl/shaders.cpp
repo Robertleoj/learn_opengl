@@ -136,4 +136,49 @@ gl::GLuint make_shader_program(
     return shader_program_id;
 }
 
+ShaderProgram::ShaderProgram(
+    fs::path vertex_shader_path,
+    fs::path fragment_shader_path
+) {
+    this->id = make_shader_program(vertex_shader_path, fragment_shader_path);
+}
+
+ShaderProgram::ShaderProgram(
+    gl::GLuint vertex_shader_id,
+    gl::GLuint fragment_shader_id
+) {
+    this->id = make_shader_program(vertex_shader_id, fragment_shader_id);
+}
+
+void ShaderProgram::use() {
+    gl::glUseProgram(this->id);
+}
+
+void ShaderProgram::setUniform(
+    const std::string& name,
+    bool value
+) const {
+    int variable_location = gl::glGetUniformLocation(this->id, name.c_str());
+
+    gl::glUniform1i(variable_location, static_cast<int>(value));
+}
+
+void ShaderProgram::setUniform(
+    const std::string& name,
+    int value
+) const {
+    int variable_location = gl::glGetUniformLocation(this->id, name.c_str());
+
+    gl::glUniform1i(variable_location, value);
+}
+
+void ShaderProgram::setUniform(
+    const std::string& name,
+    float value
+) const {
+    int variable_location = gl::glGetUniformLocation(this->id, name.c_str());
+
+    gl::glUniform1f(variable_location, value);
+}
+
 }  // namespace omgl

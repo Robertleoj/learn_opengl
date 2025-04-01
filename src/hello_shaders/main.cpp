@@ -42,15 +42,10 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     fs::path triangle_vertex_shader_path = shaders_dir / "triangle_basic.vert";
-    gl::GLuint triangle_vertex_shader_id =
-        omgl::compile_vertex_shader(triangle_vertex_shader_path);
-
     fs::path triangle_frag_shader_path = shaders_dir / "triangle_basic.frag";
-    gl::GLuint triangle_frag_shader_id =
-        omgl::compile_fragment_shader(triangle_frag_shader_path);
 
-    auto triangle_shader_program_id = omgl::make_shader_program(
-        triangle_vertex_shader_id, triangle_frag_shader_id
+    auto shader_program = omgl::ShaderProgram(
+        triangle_vertex_shader_path, triangle_frag_shader_path
     );
 
     std::array<float, 3 * 3> triangle_vertices = {
@@ -114,7 +109,7 @@ int main() {
         // state-using
         gl::glClear(gl::GL_COLOR_BUFFER_BIT);
 
-        gl::glUseProgram(triangle_shader_program_id);
+        shader_program.use();
         gl::glBindVertexArray(triangle_vao_id);
 
         gl::glDrawArrays(gl::GL_TRIANGLES, 0, 3);

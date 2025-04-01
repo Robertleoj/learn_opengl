@@ -22,4 +22,18 @@ gl::GLuint compile_fragment_shader(fs::path path);
 gl::GLuint
 make_shader_program(gl::GLuint vertex_shader_id, gl::GLuint fragment_shader_id);
 
+class ShaderProgram {
+   public:
+    gl::GLuint id;
+    void use();
+
+    ShaderProgram(fs::path vertex_shader_path, fs::path fragment_shader_path);
+    ShaderProgram(gl::GLuint vertex_shader_id, gl::GLuint fragment_shader_id);
+
+   private:
+    void setUniform(const std::string& name, bool value) const;
+    void setUniform(const std::string& name, int value) const;
+    void setUniform(const std::string& name, float value) const;
+};
+
 }  // namespace omgl
