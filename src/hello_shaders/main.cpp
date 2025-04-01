@@ -49,21 +49,25 @@ int main() {
         triangle_vertex_shader_path, triangle_frag_shader_path
     );
 
-    std::array<float, 3 * 3> triangle_vertices = {
+    // clang-format off
+    std::array<float, (3 + 3) * 3> triangle_vertices = {
 
-        // v1
-        0.0f,
-        0.5f,
-        0.0f,
-        // v2
-        0.5f,
-        -0.5f,
-        0.0f,
-        // v3
-        -0.5f,
-        -0.5f,
-        0.0f
+        // v1 pos
+        0.0f, 0.5f, 0.0f,
+        // v1 color
+        1.0f, 0.0f, 0.0f,
+
+        // v2 pos
+        0.5f, -0.5f, 0.0f,
+        /// v2 color
+        0.0f, 1.0f, 0.0f,
+
+        // v3 pos
+        -0.5f, -0.5f, 0.0f,
+        // v3 color
+        0.0f, 0.0f, 1.0f
     };
+    // clang-format on
 
     // create the triangel vertex array object
     gl::GLuint triangle_vao_id;
@@ -88,16 +92,19 @@ int main() {
 
     // assign the vertex buffer to the shader vertex attribute
     gl::glVertexAttribPointer(
-        0,
+        0, 3, gl::GL_FLOAT, gl::GL_FALSE, 6 * sizeof(float), (void*)(0)
+    );
+    gl::glEnableVertexAttribArray(0);
+
+    gl::glVertexAttribPointer(
+        1,
         3,
         gl::GL_FLOAT,
         gl::GL_FALSE,
-        3 * sizeof(float),
-        static_cast<void*>(0)
+        6 * sizeof(float),
+        (void*)(3 * sizeof(float))
     );
-
-    // enable the shader vertex attribute
-    gl::glEnableVertexAttribArray(0);
+    gl::glEnableVertexAttribArray(1);
 
     gl::glBindVertexArray(0);
 
