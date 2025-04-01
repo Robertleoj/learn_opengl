@@ -75,23 +75,6 @@ gl::GLuint set_element_buffer(
     return element_array_buffer_id;
 }
 
-gl::GLuint make_shader_program(
-    fs::path vertex_shader_path,
-    fs::path fragment_shader_path
-) {
-    auto vertex_shader_id = omgl::compile_vertex_shader(vertex_shader_path);
-    auto fragment_shader_id =
-        omgl::compile_fragment_shader(fragment_shader_path);
-
-    auto shader_program_id =
-        omgl::make_shader_program(vertex_shader_id, fragment_shader_id);
-
-    gl::glDeleteShader(vertex_shader_id);
-    gl::glDeleteShader(fragment_shader_id);
-
-    return shader_program_id;
-}
-
 class Square {
    public:
     Square(
