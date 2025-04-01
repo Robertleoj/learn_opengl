@@ -13,5 +13,7 @@ target_link_libraries(
     spdlog::spdlog
 
     omgl
+
+    glm::glm
 )
 

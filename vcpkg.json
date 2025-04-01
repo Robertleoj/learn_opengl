@@ -4,6 +4,7 @@
     "dependencies": [
         "spdlog",
         "glbinding",
-        "glfw3"
+        "glfw3",
+        "glm"
     ]
 }

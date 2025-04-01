@@ -1,5 +1,7 @@
 #include <spdlog/spdlog.h>
 #include <format>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <omgl/io.hpp>
 #include <omgl/shaders.hpp>
 #include <stdexcept>
@@ -154,31 +156,67 @@ void ShaderProgram::use() {
     gl::glUseProgram(this->id);
 }
 
-void ShaderProgram::setUniform(
+template <>
+void ShaderProgram::setUniform<bool>(
     const std::string& name,
-    bool value
+    const bool value
 ) const {
-    int variable_location = gl::glGetUniformLocation(this->id, name.c_str());
-
-    gl::glUniform1i(variable_location, static_cast<int>(value));
+    gl::glUniform1i(getUniformLocation(name), static_cast<int>(value));
 }
 
-void ShaderProgram::setUniform(
+template<>
+void ShaderProgram::setUniform<int>(
     const std::string& name,
-    int value
+    const int value
 ) const {
     int variable_location = gl::glGetUniformLocation(this->id, name.c_str());
 
     gl::glUniform1i(variable_location, value);
 }
 
-void ShaderProgram::setUniform(
+template<>
+void ShaderProgram::setUniform<float>(
     const std::string& name,
-    float value
+    const float value
 ) const {
     int variable_location = gl::glGetUniformLocation(this->id, name.c_str());
 
     gl::glUniform1f(variable_location, value);
+}
+
+template <>
+void ShaderProgram::setUniform<glm::vec2>(
+    const std::string& name,
+    const glm::vec2 value
+) const {
+    gl::glUniform2fv(getUniformLocation(name), 1, glm::value_ptr(value));
+}
+
+template <>
+void ShaderProgram::setUniform<glm::vec3>(
+    const std::string& name,
+    const glm::vec3 value
+) const {
+    gl::glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(value));
+}
+
+template <>
+void ShaderProgram::setUniform<glm::vec4>(
+    const std::string& name,
+    const glm::vec4 value
+) const {
+    gl::glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(value));
+}
+
+// Matrices? Why not!
+template <>
+void ShaderProgram::setUniform<glm::mat4>(
+    const std::string& name,
+    const glm::mat4 value
+) const {
+    gl::glUniformMatrix4fv(
+        getUniformLocation(name), 1, gl::GL_FALSE, glm::value_ptr(value)
+    );
 }
 
 }  // namespace omgl

@@ -20,6 +20,7 @@ set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")
 find_package(glbinding CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 add_subdirectory(lib)
 add_subdirectory(src)

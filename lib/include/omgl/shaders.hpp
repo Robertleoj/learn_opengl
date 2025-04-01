@@ -3,6 +3,7 @@
 #include <glbinding/glbinding.h>
 #include <filesystem>
 
+
 namespace fs = std::filesystem;
 namespace omgl {
 
@@ -30,10 +31,16 @@ class ShaderProgram {
     ShaderProgram(fs::path vertex_shader_path, fs::path fragment_shader_path);
     ShaderProgram(gl::GLuint vertex_shader_id, gl::GLuint fragment_shader_id);
 
+    // 🔥 Template for GLM vectors and more
+    template <typename T>
+    void setUniform(const std::string& name, const T value) const;
+
    private:
-    void setUniform(const std::string& name, bool value) const;
-    void setUniform(const std::string& name, int value) const;
-    void setUniform(const std::string& name, float value) const;
+    gl::GLint getUniformLocation(
+        const std::string& name
+    ) const {
+        return gl::glGetUniformLocation(id, name.c_str());
+    }
 };
 
 }  // namespace omgl

@@ -17,6 +17,8 @@ target_link_libraries(
     glbinding::glbinding-aux 
 
     spdlog::spdlog
+
+    glm::glm
 )
 
 target_include_directories(

@@ -7,6 +7,7 @@
 #include <glbinding/glbinding.h>
 #include <spdlog/spdlog.h>
 #include <filesystem>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <omgl/glfw.hpp>
 #include <omgl/shaders.hpp>
@@ -41,7 +42,7 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    fs::path triangle_vertex_shader_path = shaders_dir / "triangle_basic.vert";
+    fs::path triangle_vertex_shader_path = shaders_dir / "moving_triangle.vert";
     fs::path triangle_frag_shader_path = shaders_dir / "triangle_basic.frag";
 
     auto shader_program = omgl::ShaderProgram(
@@ -103,6 +104,11 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
 
+        float time_value = glfwGetTime();
+        ;
+        float shiftx = sin(time_value) / 2.0f;
+        float shifty = cos(time_value) / 2.0f;
+
         // state-setting
         gl::glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -110,6 +116,7 @@ int main() {
         gl::glClear(gl::GL_COLOR_BUFFER_BIT);
 
         shader_program.use();
+        shader_program.setUniform("shift", glm::vec2(shiftx, shifty));
         gl::glBindVertexArray(triangle_vao_id);
 
         gl::glDrawArrays(gl::GL_TRIANGLES, 0, 3);
